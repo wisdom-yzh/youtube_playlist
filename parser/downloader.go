@@ -9,7 +9,7 @@ import (
 
 func GetDownloadUrl(videoID string) (string, error) {
 	client := getDownloader()
-	video, err := getDownloader().GetVideo(videoID)
+	video, err := client.GetVideo(videoID)
 	if err != nil {
 		return "", err
 	}

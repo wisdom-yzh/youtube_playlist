@@ -24,3 +24,4 @@ clean:
 .PHONY: help
 help:
 	@echo "make all - build server && html"
+	@echo "make run - serve at localhost:8080"

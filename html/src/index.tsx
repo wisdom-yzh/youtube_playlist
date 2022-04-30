@@ -1,19 +1,41 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+import Input from "./pages/Input";
+import Play from "./pages/Play";
+
+import Container from "@mui/material/Container";
+import Box from "@mui/material/Box";
+
+import "@fontsource/roboto/300.css";
+import "@fontsource/roboto/400.css";
+import "@fontsource/roboto/500.css";
+import "@fontsource/roboto/700.css";
+import "./index.css";
 
 const root = ReactDOM.createRoot(
-  document.getElementById('root') as HTMLElement
-);
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+  document.getElementById("root") as HTMLElement
 );
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
+root.render(
+  <React.StrictMode>
+    <Container component="main" maxWidth="md">
+      <Box
+        sx={{
+          marginTop: 8,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
+        <Router>
+          <Routes>
+            <Route path="/*" element={<Input />} />
+            <Route path="/play/:playlistId" element={<Play />} />
+          </Routes>
+        </Router>
+      </Box>
+    </Container>
+  </React.StrictMode>
+);
