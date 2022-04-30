@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -23,6 +24,12 @@ type PlayListData struct {
 	List  []VideoData `json:"list"`
 }
 
+var (
+	playlistClient = NewPlaylist()
+	playlistCache  = NewCache(24 * time.Hour)
+	videoCache     = NewCache(5 * time.Minute)
+)
+
 func PlaylistHandler(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	playlist, exist := params["list"]
@@ -31,7 +38,15 @@ func PlaylistHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rawData, err := NewPlaylist(playlist).GetData()
+	data := playlistCache.Get(playlist)
+	if data != nil {
+		if err := json.NewEncoder(w).Encode(data.(PlayListData)); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+		return
+	}
+
+	rawData, err := playlistClient.GetData(playlist)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -56,8 +71,10 @@ func PlaylistHandler(w http.ResponseWriter, r *http.Request) {
 		list[idx].DurationLabel = inner.LengthText.Accessibility.AccessibilityData.Label
 	}
 
-	data := &PlayListData{Title: rawData.Metadata.PlaylistMetadataRenderer.Title, List: list}
-	if err := json.NewEncoder(w).Encode(data); err != nil {
+	data = PlayListData{Title: rawData.Metadata.PlaylistMetadataRenderer.Title, List: list}
+	defer playlistCache.Set(playlist, data)
+
+	if err := json.NewEncoder(w).Encode(&data); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -71,12 +88,21 @@ func VideoUrlHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	data := videoCache.Get(videoId)
+	if data != nil {
+		if err := json.NewEncoder(w).Encode(map[string]string{"url": data.(string)}); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+		return
+	}
+
 	url, err := GetDownloadUrl(videoId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
+	defer videoCache.Set(videoId, url)
 	if err := json.NewEncoder(w).Encode(map[string]string{"url": url}); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

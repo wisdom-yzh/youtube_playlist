@@ -1,5 +1,5 @@
 .PHONY: all
-all: build start
+all: build
 
 .PHONY: build
 build: clean
@@ -21,11 +21,6 @@ html:
 clean:
 	rm -rf bin
 
-.PHONY: test
-test:
-	@cd server
-	@go test
-
 .PHONY: help
 help:
-	@echo "make all - build server"
+	@echo "make all - build server && html"

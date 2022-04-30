@@ -18,17 +18,16 @@ const (
 )
 
 type Playlist struct {
-	playlist string
-	re       *regexp.Regexp
+	re *regexp.Regexp
 }
 
-func NewPlaylist(playlist string) *Playlist {
+func NewPlaylist() *Playlist {
 	re, _ := regexp.Compile(MATCH_REG)
-	return &Playlist{playlist: playlist, re: re}
+	return &Playlist{re: re}
 }
 
-func (client *Playlist) GetData() (*YoutubePlayListData, error) {
-	raw, err := client.getRawResponse()
+func (client *Playlist) GetData(playlist string) (*YoutubePlayListData, error) {
+	raw, err := client.getRawResponse(playlist)
 	if err != nil {
 		return nil, err
 	}
@@ -47,14 +46,14 @@ func (client *Playlist) GetData() (*YoutubePlayListData, error) {
 	return youtubePlayListData, nil
 }
 
-func (client *Playlist) getRawResponse() ([]byte, error) {
+func (client *Playlist) getRawResponse(playlist string) ([]byte, error) {
 	baseUrl, err := url.Parse(BASE_URL)
 	if err != nil {
 		return nil, err
 	}
 
 	query := baseUrl.Query()
-	query.Add(QUERY_KEY, client.playlist)
+	query.Add(QUERY_KEY, playlist)
 	baseUrl.RawQuery = query.Encode()
 
 	req, err := http.NewRequest(METHOD, baseUrl.String(), nil)
