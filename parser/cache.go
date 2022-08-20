@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"log"
 	"sync"
 	"time"
 )
@@ -34,6 +35,7 @@ func (c *Cache) Get(key string) interface{} {
 		return nil
 	}
 
+	log.Printf("Get key %s from cache, expire %v", key, val.expire)
 	return val.data
 }
 
@@ -41,9 +43,13 @@ func (c *Cache) Set(key string, data interface{}) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	expire := time.Now().Add(c.ttl)
+
 	c.cache[key] = CachedData{
 		key:    key,
 		data:   data,
-		expire: time.Now().Add(c.ttl),
+		expire: expire,
 	}
+
+	log.Printf("Set key %s to cache, expire %v", key, expire)
 }

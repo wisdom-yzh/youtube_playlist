@@ -17,6 +17,7 @@ bin
 
 # dependencies
 html/.pnp
+html/build
 .pnp.js
 
 # testing

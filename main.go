@@ -1,15 +1,20 @@
 package main
 
 import (
+	"embed"
 	"encoding/json"
+	"io"
+	"io/fs"
+	"log"
 	"net/http"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/wisdom-yzh/youtube_playlist/parser"
 )
+
+//go:embed html/build/*
+var html embed.FS
 
 type spaHandler struct {
 	indexPath  string
@@ -17,25 +22,32 @@ type spaHandler struct {
 }
 
 func (h spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	execPath, err := os.Executable()
+	fSys, err := fs.Sub(html, "html/build")
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	basePath := filepath.Join(filepath.Dir(execPath), h.staticPath)
-	path := filepath.Join(basePath, r.URL.Path)
-
-	_, err = os.Stat(path)
-	if os.IsNotExist(err) {
-		http.ServeFile(w, r, filepath.Join(basePath, h.indexPath))
-		return
-	} else if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	http.FileServer(http.Dir(basePath)).ServeHTTP(w, r)
+	f, err := fSys.Open(r.URL.Path)
+	if err != nil {
+		f, err = fSys.Open("index.html")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	content, err := io.ReadAll(f)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	_, err = w.Write(content)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func accessControlMiddleware(next http.Handler) http.Handler {
@@ -57,6 +69,8 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+
 	router := mux.NewRouter()
 	router.Use(accessControlMiddleware)
 
@@ -65,7 +79,7 @@ func main() {
 	router.Path("/api/video/{video}").HandlerFunc(parser.VideoUrlHandler).Methods(http.MethodGet)
 
 	spa := spaHandler{indexPath: "index.html", staticPath: "html"}
-	router.PathPrefix("/").Handler(spa)
+	router.PathPrefix("/").Handler(http.StripPrefix("/", spa))
 
 	srv := &http.Server{
 		Handler:      router,
@@ -74,5 +88,6 @@ func main() {
 		ReadTimeout:  15 * time.Second,
 	}
 
+	log.Printf("Begin to serve at %v\n", srv.Addr)
 	srv.ListenAndServe()
 }

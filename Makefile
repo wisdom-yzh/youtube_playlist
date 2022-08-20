@@ -4,10 +4,11 @@ all: build
 .PHONY: build
 build: clean
 	mkdir -p bin
+	echo "build html..."
+	cd html && npm i && npm run build
 	echo "build server..."
 	go build -o ./bin/server
-	echo "build html..."
-	cd html && npm i && npm run build && mv build ../bin/html
+
 
 .PHONY: run
 run:
