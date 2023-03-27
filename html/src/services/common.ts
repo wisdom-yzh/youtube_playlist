@@ -9,5 +9,9 @@ export const fetcher = async <T>(url: string): Promise<T> => {
 };
 
 export const useService = <T>(path: string) => {
-  return useSWR<T>(path, fetcher, { refreshInterval: 0 });
+  return useSWR<T>(path, fetcher, {
+    refreshInterval: 0,
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+  });
 };
