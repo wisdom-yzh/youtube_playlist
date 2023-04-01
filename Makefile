@@ -9,6 +9,9 @@ build: clean
 	echo "build server..."
 	go build -o ./bin/server
 
+.PHONY: server
+server:
+	go build -o ./bin/server
 
 .PHONY: run
 run:

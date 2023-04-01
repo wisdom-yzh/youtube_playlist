@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -26,6 +27,12 @@ func (h spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	if strings.HasSuffix(r.URL.Path, ".js") {
+		w.Header().Add("Content-Type", "application/javascript")
+	} else if strings.HasSuffix(r.URL.Path, ".css") {
+		w.Header().Add("Content-Type", "text/css")
 	}
 
 	f, err := fSys.Open(r.URL.Path)
@@ -77,6 +84,7 @@ func main() {
 	router.Path("/api/health").HandlerFunc(healthHandler).Methods(http.MethodGet)
 	router.Path("/api/list/{list}").HandlerFunc(parser.PlaylistHandler).Methods(http.MethodGet)
 	router.Path("/api/video/{video}").HandlerFunc(parser.VideoUrlHandler).Methods(http.MethodGet)
+	router.Path("/api/video_data/{video}").HandlerFunc(parser.VideoDataHandler).Methods(http.MethodGet)
 
 	spa := spaHandler{indexPath: "index.html", staticPath: "html"}
 	router.PathPrefix("/").Handler(http.StripPrefix("/", spa))

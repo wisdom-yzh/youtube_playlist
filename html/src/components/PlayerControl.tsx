@@ -69,27 +69,26 @@ const PlayerControl: React.FC<PlayerControlProps> = ({
 
   useEffect(() => {
     const videoId = videos[trackIndex].vid;
-    fetchVideoUrl(videoId).then(({ url }) => {
-      audioRef.current?.setAttribute("src", url);
-      audioRef.current?.load();
-      play();
+    const url = `/api/video_data/${videoId}`;
+    audioRef.current?.setAttribute("src", url);
+    audioRef.current?.load();
+    play();
 
-      intervalRef.current = setInterval(() => {
-        console.log("tick");
-        if (audioRef.current?.ended) {
-          clearInterval(intervalRef.current!);
-          gotoNextTrack();
-          return;
-        }
+    intervalRef.current = setInterval(() => {
+      console.log("tick");
+      if (audioRef.current?.ended) {
+        clearInterval(intervalRef.current!);
+        gotoNextTrack();
+        return;
+      }
 
-        setTrackProgress(
-          Math.round(
-            (100 * Number(audioRef.current?.currentTime ?? 0)) /
-              videos[trackIndex].durationSeconds
-          )
-        );
-      }, 1000);
-    });
+      setTrackProgress(
+        Math.round(
+          (100 * Number(audioRef.current?.currentTime ?? 0)) /
+            videos[trackIndex].durationSeconds
+        )
+      );
+    }, 1000);
 
     return () => {
       if (intervalRef.current !== null) {
