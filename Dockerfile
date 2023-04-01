@@ -3,7 +3,7 @@ COPY html /root/html
 WORKDIR /root/html
 RUN npm i && npm run build
 
-FROM golang:1.18 as server
+FROM golang:1.19 as server
 WORKDIR /root
 COPY main.go go.sum go.mod ./.
 COPY ./parser ./parser
