@@ -53,12 +53,12 @@ func NewVideoStreamManager() *VideoStreamManager {
 	return vsm
 }
 
-func (vsm *VideoStreamManager) GetVideoStream(videoId string, url string) (*VideoStreamReceiver, error) {
+func (vsm *VideoStreamManager) GetVideoStream(videoId string, url string, position int) (*VideoStreamReceiver, error) {
 	vsm.mu.Lock()
 	if vs, ok := vsm.videoMap[videoId]; ok {
 		vsm.mu.Unlock()
 		log.Printf("Get exist video stream %s object from manger\n", videoId)
-		return vs.AddReceiver(), nil
+		return vs.AddReceiver(position), nil
 	}
 
 	vs, err := vsm.createVideoStream(videoId, url)
@@ -69,7 +69,7 @@ func (vsm *VideoStreamManager) GetVideoStream(videoId string, url string) (*Vide
 
 	vsm.videoMap[videoId] = vs
 	vsm.mu.Unlock()
-	return vs.AddReceiver(), nil
+	return vs.AddReceiver(position), nil
 }
 
 func (vsm *VideoStreamManager) createVideoStream(videoId string, url string) (*VideoStream, error) {
@@ -112,7 +112,7 @@ func NewVideoStream(videoId string, headers http.Header, body io.ReadCloser, rec
 	return vs
 }
 
-func (vs *VideoStream) AddReceiver() *VideoStreamReceiver {
+func (vs *VideoStream) AddReceiver(position int) *VideoStreamReceiver {
 	vs.mu.Lock()
 	defer vs.mu.Unlock()
 
@@ -124,8 +124,8 @@ func (vs *VideoStream) AddReceiver() *VideoStreamReceiver {
 		closed:   atomic.Bool{},
 	}
 	vs.receivers = append(vs.receivers, receiver)
-	if receiver.position > 0 {
-		receiver.dataCh <- vs.data[:len(vs.data)]
+	if receiver.position > position {
+		receiver.dataCh <- vs.data[position:receiver.position]
 	}
 	return receiver
 }

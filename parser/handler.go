@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -116,6 +117,29 @@ func VideoUrlHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func getRangePosition(r string) int {
+	if r == "" {
+		return 0
+	}
+	const b = "bytes="
+	if !strings.HasPrefix(r, b) {
+		return 0
+	}
+
+	ra := strings.Split(r[len(b):], "-")
+	if len(ra) == 0 {
+		return 0
+	}
+
+	res, err := strconv.Atoi(ra[0])
+	if err != nil || res < 0 {
+		return 0
+	}
+
+	log.Printf("Get range start position %d\n", res)
+	return res
+}
+
 func VideoDataHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	params := mux.Vars(r)
@@ -125,16 +149,23 @@ func VideoDataHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	position := getRangePosition(r.Header.Get("Range"))
+
 	// Try to get video data from local file storage
 	headers, data, err := LoadVideo(videoId)
 	if err == nil {
+		if position >= len(data) {
+			http.Error(w, "Failed to load video, range position is larger than video size", http.StatusBadRequest)
+			return
+		}
+
 		log.Println("Response video data from local storage")
 		for key := range headers {
 			log.Printf("Set header %s=%s\n", key, headers.Get(key))
 			w.Header().Set(key, headers.Get(key))
 		}
 		w.WriteHeader(http.StatusOK)
-		w.Write(data)
+		w.Write(data[position:])
 		return
 	}
 
@@ -145,7 +176,7 @@ func VideoDataHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	receiver, err := videoManager.GetVideoStream(videoId, url)
+	receiver, err := videoManager.GetVideoStream(videoId, url, position)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

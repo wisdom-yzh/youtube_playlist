@@ -42,7 +42,7 @@ func LoadVideo(videoId string) (headers http.Header, videoData []byte, err error
 	// Read the encoded binary data from the file
 	data, err := ioutil.ReadFile(pathPrefix + videoId)
 	if err != nil {
-		log.Printf("Failed to read video data from videoId %s, err %v", videoId, err)
+		log.Printf("Failed to read video data from videoId %s, err %v\n", videoId, err)
 		return nil, nil, err
 	}
 
@@ -53,7 +53,8 @@ func LoadVideo(videoId string) (headers http.Header, videoData []byte, err error
 	var video VideoFileStorage
 	err = dec.Decode(&video)
 	if err != nil {
-		log.Printf("Failed to unmarshal video data from videoId %s, err %v", videoId, err)
+		log.Printf("Failed to unmarshal video data from videoId %s, err %v\n", videoId, err)
+		return nil, nil, err
 	}
 
 	log.Println("Success to get video data from local file storage")
