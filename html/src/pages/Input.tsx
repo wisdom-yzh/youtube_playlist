@@ -5,10 +5,14 @@ import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import HistoryList from "../components/HistoryList";
+import { useHistoryPlayList } from "../services";
 
 const Input: React.FC = () => {
   const navigate = useNavigate();
   const [playlistId, setPlaylistId] = useState("");
+  const historyPlaylist = useHistoryPlayList();
+
   return (
     <>
       <Typography component="h1" variant="h5">
@@ -38,6 +42,7 @@ const Input: React.FC = () => {
           Go
         </Button>
       </Box>
+      <HistoryList historyList={historyPlaylist} />
     </>
   );
 };
